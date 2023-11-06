@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using StackIpProject.Configuration;
 using StackIpProject.Interfaces;
 using StackIpProject.Model;
 using System;
@@ -16,16 +18,17 @@ namespace StackIpProject
     public class IPInfoProvider : IIPInfoProvider
     {
         private readonly HttpClient _httpClient;
-        private readonly IConfiguration _configuration;
-        public IPInfoProvider(HttpClient httpClient, IConfiguration configuration)
+        private readonly EndPointSetting _endPointSetting;
+      
+        public IPInfoProvider(HttpClient httpClient, IOptions<EndPointSetting> options)
         {
             _httpClient = httpClient;
-            _configuration = configuration;
+            _endPointSetting = options.Value;
         }
 
         public async Task<IIPDetails> GetIPDetailsAsync(string ip)
         {
-            string fullUrl = $"{_configuration.GetSection("Url")}{ip}?access_key={_configuration.GetSection("Key")}";
+            string fullUrl = $"{_endPointSetting.Url}{ip}?access_key={_endPointSetting.Key}";
 
             Console.WriteLine(fullUrl);
 
