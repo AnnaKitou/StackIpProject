@@ -30,18 +30,26 @@ namespace StackIpProject
             Console.WriteLine(fullUrl);
 
             var request = new HttpRequestMessage(HttpMethod.Get, fullUrl);
-            var response =await _httpClient.SendAsync(request);
-            if (response.StatusCode == HttpStatusCode.OK)
+            var response = await _httpClient.SendAsync(request);
+
+            try
             {
+                response.EnsureSuccessStatusCode();
                 var responseMessage = response.Content.ReadAsStringAsync().Result;
-                var result = JsonConvert.DeserializeObject<IPDetails>(responseMessage);
-
-
+                var result = JsonConvert.DeserializeObject<IPDetails>(responseMessage); 
                 return result;
             }
-            throw new NotImplementedException();
+            catch (HttpRequestException ex) when 
+            (ex.StatusCode == HttpStatusCode.NotFound 
+            || ex.StatusCode == HttpStatusCode.Unauthorized 
+            || ex.StatusCode == HttpStatusCode.Forbidden 
+            || ex.StatusCode == HttpStatusCode.BadGateway 
+            || ex.StatusCode == HttpStatusCode.BadRequest 
+            || ex.StatusCode == HttpStatusCode.GatewayTimeout 
+            || ex.StatusCode == HttpStatusCode.RequestTimeout)
+            {
+                throw new HttpRequestException("IPServiceNotAvailableException");
+            }
         }
-
-   
     }
 }
