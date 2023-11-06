@@ -9,7 +9,7 @@ namespace StackIpProject.Model
 {
     public class IPDetails : IIPDetails
     {
-        public int Id { get; set; }
+     
         public string? Ip { get; set; }
         public string? City { get; set; }
         public string? Country { get; set; }

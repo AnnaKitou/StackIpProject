@@ -44,6 +44,7 @@ namespace IpStackAPI.Controllers
                         var iPDetails = await _provider.GetIPDetailsAsync(ip);
                         if (iPDetails != null)
                         {
+                            _cache.Set("ipCacheKey", iPDetails, TimeSpan.FromMinutes(1));
                             var result = new DetailsOfIp()
                             {
                                 Ip = ip,
@@ -53,7 +54,7 @@ namespace IpStackAPI.Controllers
                                 Longitude = iPDetails.Longitude,
                             };
                             _stackIpService.AddDetail(result);
-                            _cache.Set("ipCacheKey", iPDetails, TimeSpan.FromMinutes(1));
+                           
                             return Ok(result);
                         }
                     }

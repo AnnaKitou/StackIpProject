@@ -28,7 +28,8 @@ namespace StackIpProject
 
         public async Task<IIPDetails> GetIPDetailsAsync(string ip)
         {
-            string fullUrl = $"{_endPointSetting.Url}{ip}?access_key={_endPointSetting.Key}";
+            //string fullUrl = $"{_endPointSetting.Url}{ip}?access_key={_endPointSetting.Key}";
+            string fullUrl = $"http://api.ipstack.com/{ip}?access_key=d4e42bc4a521e20e48a8a2af6306f3b9";
 
             Console.WriteLine(fullUrl);
 

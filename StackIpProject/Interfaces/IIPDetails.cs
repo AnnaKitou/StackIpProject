@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace StackIpProject.Interfaces
 {
-    public class IIPDetails
+    public interface IIPDetails
     {
         public string? Ip { get; set; }
         public string? City { get; set; }

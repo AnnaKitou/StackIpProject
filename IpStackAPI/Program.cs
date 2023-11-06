@@ -1,7 +1,9 @@
 using IpStackAPI.Context;
 using IpStackAPI.RepositoryServices;
 using Microsoft.EntityFrameworkCore;
+using StackIpProject;
 using StackIpProject.Configuration;
+using StackIpProject.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +19,7 @@ builder.Services.Configure<EndPointSetting>
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IStackIpService, StackIpService>();
+builder.Services.AddScoped<IIPInfoProvider, IPInfoProvider>();
 builder.Services.AddMemoryCache();
 var app = builder.Build();
 
