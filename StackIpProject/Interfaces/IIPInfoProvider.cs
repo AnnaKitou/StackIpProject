@@ -8,5 +8,6 @@ namespace StackIpProject.Interfaces
 {
     public interface IIPInfoProvider
     {
+        Task<IIPDetails> GetIPDetailsAsync(string ip);
     }
 }
