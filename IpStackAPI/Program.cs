@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using StackIpProject;
 using StackIpProject.Configuration;
 using StackIpProject.Interfaces;
+using System.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,8 +15,10 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
-builder.Services.Configure<EndPointSetting>
-        (builder.Configuration.GetSection("EndPointSetting"));
+builder.Configuration.SetBasePath(System.AppContext.BaseDirectory)
+                  .AddJsonFile(Path.Combine("appsettings2.json"), optional: false, reloadOnChange: true);
+builder.Services.Configure<EndPointSetting>(options =>
+builder.Configuration.GetSection("EndPointSetting").Bind(options));
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IStackIpService, StackIpService>();

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations;
 
 namespace IpStackAPI.Entities
 {
@@ -9,7 +10,6 @@ namespace IpStackAPI.Entities
 
         [Required]
         public string? Ip { get; set; }
-
         public string? City { get; set; }
         public string? Country { get; set; }
         public double Latitude { get; set; }

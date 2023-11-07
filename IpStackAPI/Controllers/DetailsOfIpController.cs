@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using StackIpProject.Interfaces;
+using System.Net;
 
 namespace IpStackAPI.Controllers
 {
@@ -28,45 +29,52 @@ namespace IpStackAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<DetailsOfIp>> Get(string ip)
         {
-
-            if (!_cache.TryGetValue("ipCacheKey", out DetailsOfIp? detailsOfIp))
+            IPAddress address;
+            bool isValid = IPAddress.TryParse(ip, out address);
+            if (!isValid)
             {
-                detailsOfIp = await _stackIpService.GetDetailsOfIp(ip);
-                if (detailsOfIp != null)
-                {
-                    _cache.Set("ipCacheKey", detailsOfIp, TimeSpan.FromMinutes(1));
-                    return detailsOfIp;
-                }
-                else
-                {
-                    try
-                    {
-                        var iPDetails = await _provider.GetIPDetailsAsync(ip);
-                        if (iPDetails != null)
-                        {
-                            _cache.Set("ipCacheKey", iPDetails, TimeSpan.FromMinutes(1));
-                            var result = new DetailsOfIp()
-                            {
-                                Ip = ip,
-                                City = iPDetails.City,
-                                Country = iPDetails.Country,
-                                Latitude = iPDetails.Latitude,
-                                Longitude = iPDetails.Longitude,
-                            };
-                            _stackIpService.AddDetail(result);
-                           
-                            return Ok(result);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-                    }
-
-                }
+                throw new Exception("The IP Address supplied is invalid.");
             }
-            return Ok(detailsOfIp);
+            else
+            {
+                if (!_cache.TryGetValue("ipCacheKey", out DetailsOfIp? detailsOfIp))
+                {
+                    detailsOfIp = await _stackIpService.GetDetailsOfIp(ip);
+                    if (detailsOfIp != null)
+                    {
+                        _cache.Set("ipCacheKey", detailsOfIp, TimeSpan.FromMinutes(1));
+                        return detailsOfIp;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            var iPDetails = await _provider.GetIPDetailsAsync(ip);
+                            if (iPDetails != null)
+                            {
+                                _cache.Set("ipCacheKey", iPDetails, TimeSpan.FromMinutes(1));
+                                var result = new DetailsOfIp()
+                                {
+                                    Ip = ip,
+                                    City = iPDetails.City,
+                                    Country = iPDetails.Country,
+                                    Latitude = iPDetails.Latitude,
+                                    Longitude = iPDetails.Longitude,
+                                };
+                                _stackIpService.AddDetail(result);
 
+                                return Ok(result);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+                        }
+
+                    }
+                }
+                return Ok(detailsOfIp);
+            }
         }
 
     }
