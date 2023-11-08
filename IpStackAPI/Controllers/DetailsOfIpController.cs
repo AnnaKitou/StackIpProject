@@ -1,5 +1,6 @@
 ﻿using IpStackAPI.Context;
 using IpStackAPI.Entities;
+using IpStackAPI.GenericRepository;
 using IpStackAPI.RepositoryServices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,17 +14,19 @@ namespace IpStackAPI.Controllers
     [ApiController]
     public class DetailsOfIpController : ControllerBase
     {
-        private readonly IStackIpService _stackIpService;
+        //private readonly IStackIpService _stackIpService;
+        private readonly IGenericRepository<DetailsOfIp> _stackIpRepo;
         private readonly IMemoryCache _cache;
         private readonly IIPInfoProvider _provider;
 
 
 
-        public DetailsOfIpController(IStackIpService stackIpService, IMemoryCache memoryCache, ApplicationDbContext context, IIPInfoProvider provider)
+        public DetailsOfIpController( IMemoryCache memoryCache, ApplicationDbContext context, IIPInfoProvider provider, IGenericRepository<DetailsOfIp> stackIpRepo)
         {
-            _stackIpService = stackIpService;
+           
             _cache = memoryCache;
             _provider = provider;
+            _stackIpRepo = stackIpRepo;
         }
 
         [HttpGet]
@@ -39,7 +42,9 @@ namespace IpStackAPI.Controllers
             {
                 if (!_cache.TryGetValue("ipCacheKey", out DetailsOfIp? detailsOfIp))
                 {
-                    detailsOfIp = await _stackIpService.GetDetailsOfIp(ip);
+                    //detailsOfIp = await _stackIpService.GetDetailsOfIp(ip);
+                    detailsOfIp = await _stackIpRepo.GetDetailsOfIp(ip.ToString());
+
                     if (detailsOfIp != null)
                     {
                         _cache.Set("ipCacheKey", detailsOfIp, TimeSpan.FromMinutes(1));
@@ -61,8 +66,8 @@ namespace IpStackAPI.Controllers
                                     Latitude = iPDetails.Latitude,
                                     Longitude = iPDetails.Longitude,
                                 };
-                                _stackIpService.AddDetail(result);
-
+                                //_stackIpService.AddDetail(result);
+                                _stackIpRepo.AddDetail(result);
                                 return Ok(result);
                             }
                         }

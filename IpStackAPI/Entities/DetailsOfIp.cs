@@ -1,9 +1,10 @@
-﻿using Newtonsoft.Json;
+﻿using IpStackAPI.Interfaces;
+using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
 
 namespace IpStackAPI.Entities
 {
-    public class DetailsOfIp
+    public class DetailsOfIp: IHasIpProperty
     {
         [Key]
         public int Id { get; set; }
