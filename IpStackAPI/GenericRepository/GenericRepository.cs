@@ -29,5 +29,9 @@ namespace IpStackAPI.GenericRepository
             return (_applicationDbContext.SaveChanges() >= 0);
         }
 
+        public async Task<Guid> UpdateDetail(string[] ipDetails)
+        {
+            return Guid.Parse(ipDetails[0]);
+        }
     }
 }

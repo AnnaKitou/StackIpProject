@@ -1,4 +1,5 @@
 ﻿using IpStackAPI.Context;
+using IpStackAPI.DTOS;
 using IpStackAPI.Entities;
 using IpStackAPI.GenericRepository;
 using IpStackAPI.RepositoryServices;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using StackIpProject.Interfaces;
 using System.Net;
+using System.Net.WebSockets;
 
 namespace IpStackAPI.Controllers
 {
@@ -21,9 +23,9 @@ namespace IpStackAPI.Controllers
 
 
 
-        public DetailsOfIpController( IMemoryCache memoryCache, ApplicationDbContext context, IIPInfoProvider provider, IGenericRepository<DetailsOfIp> stackIpRepo)
+        public DetailsOfIpController(IMemoryCache memoryCache, ApplicationDbContext context, IIPInfoProvider provider, IGenericRepository<DetailsOfIp> stackIpRepo)
         {
-           
+
             _cache = memoryCache;
             _provider = provider;
             _stackIpRepo = stackIpRepo;
@@ -43,7 +45,7 @@ namespace IpStackAPI.Controllers
                 if (!_cache.TryGetValue("ipCacheKey", out DetailsOfIp? detailsOfIp))
                 {
                     //detailsOfIp = await _stackIpService.GetDetailsOfIp(ip);
-                    detailsOfIp = await _stackIpRepo.GetDetailsOfIp(ip.ToString());
+                    detailsOfIp = await _stackIpRepo.GetDetailsOfIp(ip);
 
                     if (detailsOfIp != null)
                     {
@@ -80,6 +82,26 @@ namespace IpStackAPI.Controllers
                 }
                 return Ok(detailsOfIp);
             }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateApiDetails(DetailsOfIpDTO detailsOfIpDTO, string ip)
+        {
+            var ipDetailsEntity = await _stackIpRepo.GetDetailsOfIp(ip);
+            if (ipDetailsEntity == null)
+            {
+                return NotFound();
+            }
+
+            var finalIp = new DetailsOfIp();
+            finalIp.Ip = ip;
+            finalIp.Longitude = detailsOfIpDTO.Longitude;
+            finalIp.Latitude = detailsOfIpDTO.Latitude;
+            finalIp.Country = detailsOfIpDTO.Country;
+            finalIp.City = detailsOfIpDTO.City;
+
+            _stackIpRepo.AddDetail(finalIp);
+            return Ok(finalIp);
         }
 
     }
