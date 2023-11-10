@@ -1,4 +1,5 @@
 ﻿using IpStackAPI.Context;
+using IpStackAPI.Entities;
 using IpStackAPI.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +11,7 @@ namespace IpStackAPI.GenericRepository
         private DbSet<T> table;
         public GenericRepository(ApplicationDbContext applicationDbContext)
         {
-         _applicationDbContext = applicationDbContext;
+            _applicationDbContext = applicationDbContext;
             table = _applicationDbContext.Set<T>();
         }
 
@@ -29,9 +30,21 @@ namespace IpStackAPI.GenericRepository
             return (_applicationDbContext.SaveChanges() >= 0);
         }
 
-        public async Task<Guid> UpdateDetail(string[] ipDetails)
+
+
+        public async Task<Guid> UpdateDetail(T detailsOfIps)
         {
-            return Guid.Parse(ipDetails[0]);
+           
+            if (detailsOfIps != null)
+            {
+                table.Update(detailsOfIps);
+               await _applicationDbContext.SaveChangesAsync();
+            }
+
+
+            return Guid.Empty;
         }
+
+
     }
 }

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using StackIpProject.Interfaces;
+using StackIpProject.Model;
 using System.Net;
 using System.Net.WebSockets;
 
@@ -85,23 +86,37 @@ namespace IpStackAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdateApiDetails(DetailsOfIpDTO detailsOfIpDTO, string ip)
+        public async Task<IActionResult> UpdateApiDetails(DetailsOfIpDTO[] detailsOfIpDTO)
         {
-            var ipDetailsEntity = await _stackIpRepo.GetDetailsOfIp(ip);
-            if (ipDetailsEntity == null)
+
+
+            // if (ipDetailsEntity == null)
+            // {
+            //     return NotFound();
+            // }
+
+
+
+            foreach (var detailsOfIp in detailsOfIpDTO)
             {
-                return NotFound();
+                var finalIp = new DetailsOfIp();
+                var ipDetailsEntity = await _stackIpRepo.GetDetailsOfIp(detailsOfIp.Ip);
+
+                
+                    ipDetailsEntity.Ip = ipDetailsEntity.Ip;
+                    ipDetailsEntity.Longitude = detailsOfIp.Longitude;
+                    ipDetailsEntity.Latitude = detailsOfIp.Latitude;
+                    ipDetailsEntity.Country = detailsOfIp.Country;
+                    ipDetailsEntity.City = detailsOfIp.City;
+
+                    await _stackIpRepo.UpdateDetail(ipDetailsEntity);
+                
             }
 
-            var finalIp = new DetailsOfIp();
-            finalIp.Ip = ip;
-            finalIp.Longitude = detailsOfIpDTO.Longitude;
-            finalIp.Latitude = detailsOfIpDTO.Latitude;
-            finalIp.Country = detailsOfIpDTO.Country;
-            finalIp.City = detailsOfIpDTO.City;
 
-            _stackIpRepo.AddDetail(finalIp);
-            return Ok(finalIp);
+
+
+            return Ok(detailsOfIpDTO);
         }
 
     }
