@@ -1,5 +1,7 @@
 using IpStackAPI.Context;
+using IpStackAPI.FactoryPattern;
 using IpStackAPI.GenericRepository;
+using IpStackAPI.Interfaces;
 using IpStackAPI.RepositoryServices;
 using Microsoft.EntityFrameworkCore;
 using StackIpProject;
@@ -23,8 +25,13 @@ builder.Configuration.GetSection("EndPointSetting").Bind(options));
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 //builder.Services.AddScoped<IStackIpService, StackIpService>();
-builder.Services.AddScoped(typeof(IGenericRepository<>),typeof(GenericRepository<>));
+
+
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IIPInfoProvider, IPInfoProvider>();
+builder.Services.AddScoped<IBatchUpdateService, BatchUpdateService>();
+builder.Services.AddSingleton<IBatchUpdateServiceFactory, BatchUpdateServiceFactory>();
+builder.Services.AddHostedService<BatchUpdateBackgroundService>();
 builder.Services.AddMemoryCache();
 var app = builder.Build();
 

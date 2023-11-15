@@ -1,5 +1,6 @@
 ﻿using IpStackAPI.Context;
 using IpStackAPI.Entities;
+using IpStackAPI.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace IpStackAPI.RepositoryServices

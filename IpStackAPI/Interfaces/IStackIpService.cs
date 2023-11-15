@@ -1,6 +1,6 @@
 ﻿using IpStackAPI.Entities;
 
-namespace IpStackAPI.RepositoryServices
+namespace IpStackAPI.Interfaces
 {
     public interface IStackIpService
     {

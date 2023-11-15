@@ -2,6 +2,7 @@
 using IpStackAPI.DTOS;
 using IpStackAPI.Entities;
 using IpStackAPI.GenericRepository;
+using IpStackAPI.Interfaces;
 using IpStackAPI.RepositoryServices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +11,7 @@ using StackIpProject.Interfaces;
 using StackIpProject.Model;
 using System.Net;
 using System.Net.WebSockets;
+using static IpStackAPI.RepositoryServices.QueuedBackgroundService;
 
 namespace IpStackAPI.Controllers
 {
@@ -21,15 +23,17 @@ namespace IpStackAPI.Controllers
         private readonly IGenericRepository<DetailsOfIp> _stackIpRepo;
         private readonly IMemoryCache _cache;
         private readonly IIPInfoProvider _provider;
+        private readonly IBatchUpdateService _batchUpdateService;
+        private readonly IQueuedBackgroundService _queuedBackgroundService;
 
 
-
-        public DetailsOfIpController(IMemoryCache memoryCache, ApplicationDbContext context, IIPInfoProvider provider, IGenericRepository<DetailsOfIp> stackIpRepo)
+        public DetailsOfIpController(IMemoryCache memoryCache, ApplicationDbContext context, IIPInfoProvider provider, IGenericRepository<DetailsOfIp> stackIpRepo, IBatchUpdateService batchUpdateService)
         {
 
             _cache = memoryCache;
             _provider = provider;
             _stackIpRepo = stackIpRepo;
+            _batchUpdateService = batchUpdateService;
         }
 
         [HttpGet]
@@ -86,37 +90,51 @@ namespace IpStackAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdateApiDetails(DetailsOfIpDTO[] detailsOfIpDTO)
+        [ProducesResponseType(StatusCodes.Status202Accepted, Type = typeof(DetailsOfIpDTO))]
+        public async Task<IActionResult> UpdateApiDetails([FromBody] DetailsOfIpDTO[] detailsOfIpDTO)
         {
+            //  var batchUpdateId = Guid.NewGuid();
+
+            // Queue the updates (this is a simplistic example, you should implement a proper queuing mechanism)
+            // Assuming _batchUpdateService is a service that handles the queuing and processing of batch updates
+
+            // Return the unique identifier
 
 
-            // if (ipDetailsEntity == null)
-            // {
-            //     return NotFound();
-            // }
+            //// if (ipDetailsEntity == null)
+            //// {
+            ////     return NotFound();
+            //// }
+            //DetailsOfIp[] detailsOf = new DetailsOfIp[] { };
+
+            //foreach (var detailsOfIp in detailsOfIpDTO)
+            //{
+
+            //    var ipDetailsEntity = await _stackIpRepo.GetDetailsOfIp(detailsOfIp.Ip);
 
 
+            //    ipDetailsEntity.Ip = ipDetailsEntity.Ip;
+            //    ipDetailsEntity.Longitude = detailsOfIp.Longitude;
+            //    ipDetailsEntity.Latitude = detailsOfIp.Latitude;
+            //    ipDetailsEntity.Country = detailsOfIp.Country;
+            //    ipDetailsEntity.City = detailsOfIp.City;
 
-            foreach (var detailsOfIp in detailsOfIpDTO)
-            {
-                var finalIp = new DetailsOfIp();
-                var ipDetailsEntity = await _stackIpRepo.GetDetailsOfIp(detailsOfIp.Ip);
+            //      _batchUpdateService.ProcessUpdates();
 
-                
-                    ipDetailsEntity.Ip = ipDetailsEntity.Ip;
-                    ipDetailsEntity.Longitude = detailsOfIp.Longitude;
-                    ipDetailsEntity.Latitude = detailsOfIp.Latitude;
-                    ipDetailsEntity.Country = detailsOfIp.Country;
-                    ipDetailsEntity.City = detailsOfIp.City;
+            //}
+            // await _batchUpdateService.QueueUpdates(batchUpdateId, detailsOfIpDTO);
 
-                    await _stackIpRepo.UpdateDetail(ipDetailsEntity);
-                
-            }
+            // return Ok(batchUpdateId);
 
+            return Accepted(
+                await _queuedBackgroundService.PostWorkItemAsync(detailsOfIpDTO).ConfigureAwait(false));
+        }
 
-
-
-            return Ok(detailsOfIpDTO);
+        [HttpGet]
+        [Route("CheckStatus")]
+        public async Task<ActionResult<BatchUpdateStatus>> GetUpdateStatus(Guid batchId)
+        {
+            return await _batchUpdateService.GetUpdateStatus(batchId);
         }
 
     }
