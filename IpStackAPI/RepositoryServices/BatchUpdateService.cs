@@ -11,31 +11,48 @@ namespace IpStackAPI.RepositoryServices
         private readonly ConcurrentQueue<BatchUpdateItem> _queue = new ConcurrentQueue<BatchUpdateItem>();
         private readonly Dictionary<Guid, BatchUpdateStatus> _statusMap = new Dictionary<Guid, BatchUpdateStatus>();
         private readonly IGenericRepository<DetailsOfIp> _stackIpRepo;
+        private readonly IStackIpService _service;
 
-        public BatchUpdateService(IGenericRepository<DetailsOfIp> stackIpRepo)
+        public BatchUpdateService(IGenericRepository<DetailsOfIp> stackIpRepo, IStackIpService service)
         {
             _stackIpRepo = stackIpRepo;
+            _service = service;
         }
 
         public async Task QueueUpdates(Guid batchId, DetailsOfIpDTO[] updates)
         {
-            foreach (var update in updates)
-            {
-                _queue.Enqueue(new BatchUpdateItem(batchId, update));
-            }
+           
+                _queue.Enqueue(new BatchUpdateItem(batchId, updates));
+            
             _statusMap[batchId] = BatchUpdateStatus.Queued;
             return;
         }
 
         // Method to be called by a background service to process updates
-        public void ProcessUpdates()
+        public async void ProcessUpdates()
         {
             while (_queue.TryDequeue(out BatchUpdateItem item))
             {
                 try
                 {
+
+                    foreach (var itemDetails in item.DetailsForUpdate)
+                    {
+                        var test = itemDetails;
+
+                        var ipDetailsEntity = await _service.GetDetailsOfIp(itemDetails.Ip);
+
+
+                        ipDetailsEntity.Ip = ipDetailsEntity.Ip;
+                        ipDetailsEntity.Longitude = itemDetails.Longitude;
+                        ipDetailsEntity.Latitude = itemDetails.Latitude;
+                        ipDetailsEntity.Country = itemDetails.Country;
+                        ipDetailsEntity.City = itemDetails.City;
+
+                        _stackIpRepo.UpdateDetail(ipDetailsEntity);
+                    }
                    // // Process the update
-                   //_stackIpRepo.UpdateDetail(item.UpdateDetails);
+               
 
                     // Update the individual item status (if needed)
                     // Update the batch status
@@ -61,12 +78,12 @@ namespace IpStackAPI.RepositoryServices
     public class BatchUpdateItem
     {
         public Guid BatchId { get; }
-        public DetailsOfIpDTO UpdateDetails { get; }
+        public DetailsOfIpDTO[] DetailsForUpdate { get; }
 
-        public BatchUpdateItem(Guid batchId, DetailsOfIpDTO updateDetails)
+        public BatchUpdateItem(Guid batchId, DetailsOfIpDTO[] updateDetails)
         {
             BatchId = batchId;
-            UpdateDetails = updateDetails;
+            DetailsForUpdate = updateDetails;
         }
     }
 

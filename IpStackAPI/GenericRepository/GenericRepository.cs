@@ -18,8 +18,18 @@ namespace IpStackAPI.GenericRepository
 
         public async Task<T?> GetDetailsOfIp(string ip)
         {
-            var result = await table.FirstOrDefaultAsync(entity => entity.Ip == ip);
-            return result;
+            try
+            {
+                var result = await table.FirstOrDefaultAsync(entity => entity.Ip == ip);
+                return result;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+          return null;
         }
         public bool AddDetail(T detailsOfIp)
         {
@@ -30,7 +40,7 @@ namespace IpStackAPI.GenericRepository
             _applicationDbContext.Add(detailsOfIp);
             return (_applicationDbContext.SaveChanges() >= 0);
         }
-        public async Task<Guid> UpdateDetail(T detailsOfIps)
+        public async Task UpdateDetail(T detailsOfIps)
         {
 
             if (detailsOfIps != null)
@@ -38,7 +48,7 @@ namespace IpStackAPI.GenericRepository
                 table.Update(detailsOfIps);
                 await _applicationDbContext.SaveChangesAsync();
             }
-            return Guid.NewGuid();
+            return;
         }
     }
 

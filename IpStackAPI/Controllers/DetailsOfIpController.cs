@@ -11,8 +11,6 @@ using StackIpProject.Interfaces;
 using StackIpProject.Model;
 using System.Net;
 using System.Net.WebSockets;
-using static IpStackAPI.RepositoryServices.QueuedBackgroundService;
-
 namespace IpStackAPI.Controllers
 {
     [Route("api/[controller]")]
@@ -24,7 +22,6 @@ namespace IpStackAPI.Controllers
         private readonly IMemoryCache _cache;
         private readonly IIPInfoProvider _provider;
         private readonly IBatchUpdateService _batchUpdateService;
-        private readonly IQueuedBackgroundService _queuedBackgroundService;
 
 
         public DetailsOfIpController(IMemoryCache memoryCache, ApplicationDbContext context, IIPInfoProvider provider, IGenericRepository<DetailsOfIp> stackIpRepo, IBatchUpdateService batchUpdateService)
@@ -93,11 +90,11 @@ namespace IpStackAPI.Controllers
         [ProducesResponseType(StatusCodes.Status202Accepted, Type = typeof(DetailsOfIpDTO))]
         public async Task<IActionResult> UpdateApiDetails([FromBody] DetailsOfIpDTO[] detailsOfIpDTO)
         {
-            //  var batchUpdateId = Guid.NewGuid();
-
+            var batchUpdateId = Guid.NewGuid();
             // Queue the updates (this is a simplistic example, you should implement a proper queuing mechanism)
             // Assuming _batchUpdateService is a service that handles the queuing and processing of batch updates
-
+            await _batchUpdateService.QueueUpdates(batchUpdateId, detailsOfIpDTO);
+            #region Testing Purposes
             // Return the unique identifier
 
 
@@ -107,10 +104,10 @@ namespace IpStackAPI.Controllers
             //// }
             //DetailsOfIp[] detailsOf = new DetailsOfIp[] { };
 
-            //foreach (var detailsOfIp in detailsOfIpDTO)
-            //{
+            //    foreach (var detailsOfIp in detailsOfIpDTO)
+            //    {
 
-            //    var ipDetailsEntity = await _stackIpRepo.GetDetailsOfIp(detailsOfIp.Ip);
+            //        var ipDetailsEntity = await _stackIpRepo.GetDetailsOfIp(detailsOfIp.Ip);
 
 
             //    ipDetailsEntity.Ip = ipDetailsEntity.Ip;
@@ -119,15 +116,16 @@ namespace IpStackAPI.Controllers
             //    ipDetailsEntity.Country = detailsOfIp.Country;
             //    ipDetailsEntity.City = detailsOfIp.City;
 
-            //      _batchUpdateService.ProcessUpdates();
+            //        await _stackIpRepo.UpdateDetail(ipDetailsEntity);
+
+            //    //_batchUpdateService.ProcessUpdates();
 
             //}
-            // await _batchUpdateService.QueueUpdates(batchUpdateId, detailsOfIpDTO);
+            // await _batchUpdateService.QueueUpdates(batchUpdateId, detailsOfIpDTO); 
+            #endregion
+           
+            return Ok(batchUpdateId);
 
-            // return Ok(batchUpdateId);
-
-            return Accepted(
-                await _queuedBackgroundService.PostWorkItemAsync(detailsOfIpDTO).ConfigureAwait(false));
         }
 
         [HttpGet]

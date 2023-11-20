@@ -16,12 +16,13 @@ namespace IpStackAPI.RepositoryServices
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-         
+
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 var batchUpdateService = _batchUpdateServiceFactory.Create();
-               // batchUpdateService.QueueUpdates();
+                //batchUpdateService.QueueUpdates();
+              //  batchUpdateService.ProcessUpdates();
 
                 // Wait some time before next processing
                 await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);

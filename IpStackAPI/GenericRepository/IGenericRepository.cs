@@ -7,6 +7,6 @@ namespace IpStackAPI.GenericRepository
     {
         public Task<T?> GetDetailsOfIp(string ip);
         public bool AddDetail(T detailsOfIp);
-        public Task<Guid> UpdateDetail(T detailsOfIps);
+        public Task UpdateDetail(T detailsOfIps);
     }
 }
