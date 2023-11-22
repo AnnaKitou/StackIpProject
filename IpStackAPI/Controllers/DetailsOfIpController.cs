@@ -91,9 +91,18 @@ namespace IpStackAPI.Controllers
         public async Task<IActionResult> UpdateApiDetails([FromBody] DetailsOfIpDTO[] detailsOfIpDTO)
         {
             var batchUpdateId = Guid.NewGuid();
-            // Queue the updates (this is a simplistic example, you should implement a proper queuing mechanism)
-            // Assuming _batchUpdateService is a service that handles the queuing and processing of batch updates
-            await _batchUpdateService.QueueUpdates(batchUpdateId, detailsOfIpDTO);
+
+            //foreach (var detail in detailsOfIpDTO)
+            //{
+            //    _batchUpdateService.Enqueue(detail);
+            //}
+
+               _batchUpdateService.Enqueue(batchUpdateId,detailsOfIpDTO);
+            
+
+            return Ok(batchUpdateId);
+
+    
             #region Testing Purposes
             // Return the unique identifier
 
@@ -123,17 +132,16 @@ namespace IpStackAPI.Controllers
             //}
             // await _batchUpdateService.QueueUpdates(batchUpdateId, detailsOfIpDTO); 
             #endregion
-           
-            return Ok(batchUpdateId);
+
 
         }
 
-        [HttpGet]
-        [Route("CheckStatus")]
-        public async Task<ActionResult<BatchUpdateStatus>> GetUpdateStatus(Guid batchId)
-        {
-            return await _batchUpdateService.GetUpdateStatus(batchId);
-        }
+        //[HttpGet]
+        //[Route("CheckStatus")]
+        //public async Task<ActionResult<BatchUpdateStatus>> GetUpdateStatus(Guid batchId)
+        //{
+        //    return await _batchUpdateService.GetUpdateStatus(batchId);
+        //}
 
     }
 }

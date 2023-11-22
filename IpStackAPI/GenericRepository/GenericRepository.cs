@@ -18,18 +18,10 @@ namespace IpStackAPI.GenericRepository
 
         public async Task<T?> GetDetailsOfIp(string ip)
         {
-            try
-            {
+            
                 var result = await table.FirstOrDefaultAsync(entity => entity.Ip == ip);
                 return result;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-
-          return null;
+          
         }
         public bool AddDetail(T detailsOfIp)
         {
