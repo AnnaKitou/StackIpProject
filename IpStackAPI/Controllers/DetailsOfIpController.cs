@@ -97,7 +97,7 @@ namespace IpStackAPI.Controllers
             //    _batchUpdateService.Enqueue(detail);
             //}
 
-               _batchUpdateService.Enqueue(batchUpdateId,detailsOfIpDTO);
+             await  _batchUpdateService.Enqueue(batchUpdateId,detailsOfIpDTO);
             
 
             return Ok(batchUpdateId);

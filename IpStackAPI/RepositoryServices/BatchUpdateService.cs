@@ -2,7 +2,9 @@
 using IpStackAPI.Entities;
 using IpStackAPI.GenericRepository;
 using IpStackAPI.Interfaces;
+using System;
 using System.Collections.Concurrent;
+using System.Threading.Tasks.Dataflow;
 
 namespace IpStackAPI.RepositoryServices
 {
@@ -10,10 +12,10 @@ namespace IpStackAPI.RepositoryServices
     {
         // private static ConcurrentQueue<DetailsOfIpDTO> _updatesQueue = new ConcurrentQueue<DetailsOfIpDTO>();
 
-        private readonly ConcurrentQueue<BatchUpdateItem> _queue = new ConcurrentQueue<BatchUpdateItem>();
-        private readonly Dictionary<Guid, BatchUpdateStatus> _statusMap = new Dictionary<Guid, BatchUpdateStatus>();
         private readonly IGenericRepository<DetailsOfIp> _stackIpRepo;
-
+        private readonly BufferBlock<BatchUpdateItem> _buffer = new BufferBlock<BatchUpdateItem>();
+        private readonly Dictionary<Guid, BatchUpdateStatus> _statusMap = new Dictionary<Guid, BatchUpdateStatus>();
+        private const int BatchSize = 10;
         public BatchUpdateService(IGenericRepository<DetailsOfIp> stackIpRepo /*IStackIpService service*/)
         {
             _stackIpRepo = stackIpRepo;
@@ -31,7 +33,7 @@ namespace IpStackAPI.RepositoryServices
         //}
 
 
-       
+
         //    
         //    private readonly IGenericRepository<DetailsOfIp> _stackIpRepo;
         //    private readonly IStackIpService _service;
@@ -42,21 +44,39 @@ namespace IpStackAPI.RepositoryServices
         //        _service = service;
         //    }
 
-        public void Enqueue(Guid batchId, DetailsOfIpDTO[] updates)
+        //public void Enqueue(Guid batchId, DetailsOfIpDTO[] updates)
+        //{
+
+        //    _queue.Enqueue(new BatchUpdateItem(batchId, updates));
+
+        //    _statusMap[batchId] = BatchUpdateStatus.Queued;
+        //    //return;
+        //}
+        public async Task Enqueue(Guid batchId, DetailsOfIpDTO[] updates)
         {
+            // Break updates into batches of 10
+            var batches = updates.Select((value, index) => new { value, index })
+                                 .GroupBy(x => x.index / BatchSize)
+                                 .Select(g => g.Select(x => x.value).ToArray());
 
-            _queue.Enqueue(new BatchUpdateItem(batchId, updates));
-
+            foreach (var batch in batches)
+            {
+                var batchUpdateItem = new BatchUpdateItem(batchId, batch);
+                _buffer.Post(batchUpdateItem);
+               
+            }
             _statusMap[batchId] = BatchUpdateStatus.Queued;
-            //return;
         }
 
-        public bool TryDequeue(out BatchUpdateItem item)
+        public async Task<BatchUpdateItem?> TryDequeue()
         {
-            Console.WriteLine($"Items in queue: {_queue.Count}");
-            return _queue.TryDequeue(out item);
-        }
+            if (_buffer.TryReceive(out var item))
+            {
+                return item;
+            }
 
+            return null;
+        }
 
         //    // Method to be called by a background service to process updates
         public async Task ProcessUpdates(DetailsOfIpDTO detailsOfIpDTO)

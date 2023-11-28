@@ -12,10 +12,10 @@ namespace IpStackAPI.Interfaces
         //bool TryDequeue(out DetailsOfIpDTO update);
 
 
-        void Enqueue(Guid batchUpdateId, DetailsOfIpDTO[] detailsOfIpDTO);
-        bool TryDequeue(out BatchUpdateItem item);
-
-
+        // void Enqueue(Guid batchUpdateId, DetailsOfIpDTO[] detailsOfIpDTO);
+        // bool TryDequeue(out BatchUpdateItem item);
+        Task Enqueue(Guid batchId, DetailsOfIpDTO[] updates);
+        Task<BatchUpdateItem?> TryDequeue();
 
         //public Task QueueUpdates(Guid batchUpdateId, DetailsOfIpDTO[] detailsOfIpDTO);
         //public Task<BatchUpdateStatus> GetUpdateStatus(Guid batchId);

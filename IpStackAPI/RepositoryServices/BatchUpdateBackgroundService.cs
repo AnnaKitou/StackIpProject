@@ -20,25 +20,55 @@ namespace IpStackAPI.RepositoryServices
             while (!stoppingToken.IsCancellationRequested)
             {
                 var batchUpdateService = _batchUpdateServiceFactory.Create();
-                //while (batchUpdateService.TryDequeue(out DetailsOfIpDTO update))
+                ////while (batchUpdateService.TryDequeue(out DetailsOfIpDTO update))
+                ////{
+
+                ////    // Process the update
+                ////    await batchUpdateService.ProcessUpdates(update);
+                ////}
+
+                //while (batchUpdateService.TryDequeue(out BatchUpdateItem item))
                 //{
+                //    foreach (var details in item.DetailsForUpdate)
+                //    {
+                //        // Process the update
+                //        await batchUpdateService.ProcessUpdates(details);
+                //    }
 
-                //    // Process the update
-                //    await batchUpdateService.ProcessUpdates(update);
                 //}
+                var batchUpdateItem = await batchUpdateService.TryDequeue();
 
-                while (batchUpdateService.TryDequeue(out BatchUpdateItem item))
+                if (batchUpdateItem != null)
                 {
-                    foreach (var details in item.DetailsForUpdate)
-                    {
-                        // Process the update
-                        await batchUpdateService.ProcessUpdates(details);
-                    }
+                    await ProcessBatchUpdate(batchUpdateItem);
+                }
+                // Wait some time before checking the queue again
+                await Task.Delay(TimeSpan.FromSeconds(20), stoppingToken);
+            }
 
+        }
+        private async Task ProcessBatchUpdate(BatchUpdateItem batchUpdateItem)
+        {
+            try
+            {
+                foreach (var itemDetails in batchUpdateItem.DetailsForUpdate)
+                {
+                    //var ipDetailsEntity = await _stackIpRepo.GetDetailsOfIp(itemDetails.Ip);
+
+                    //ipDetailsEntity.Ip = ipDetailsEntity.Ip;
+                    //ipDetailsEntity.Longitude = itemDetails.Longitude;
+                    //ipDetailsEntity.Latitude = itemDetails.Latitude;
+                    //ipDetailsEntity.Country = itemDetails.Country;
+                    //ipDetailsEntity.City = itemDetails.City;
+
+                    //await _stackIpRepo.UpdateDetail(ipDetailsEntity);
                 }
 
-                // Wait some time before checking the queue again
-                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions, log errors, etc.
+
             }
         }
         #region To Delete
