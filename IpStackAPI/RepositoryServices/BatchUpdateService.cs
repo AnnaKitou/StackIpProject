@@ -2,9 +2,13 @@
 using IpStackAPI.Entities;
 using IpStackAPI.GenericRepository;
 using IpStackAPI.Interfaces;
+using Microsoft.OpenApi.Extensions;
 using System;
 using System.Collections.Concurrent;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks.Dataflow;
+using System.Xml.Linq;
+using static IpStackAPI.RepositoryServices.BatchUpdateService;
 
 namespace IpStackAPI.RepositoryServices
 {
@@ -16,42 +20,17 @@ namespace IpStackAPI.RepositoryServices
         private readonly BufferBlock<BatchUpdateItem> _buffer = new BufferBlock<BatchUpdateItem>();
         private readonly Dictionary<Guid, BatchUpdateStatus> _statusMap = new Dictionary<Guid, BatchUpdateStatus>();
         private const int BatchSize = 10;
+
+        private ConcurrentQueue<Func<CancellationToken, BatchUpdateItem>> _workItems = new ConcurrentQueue<Func<CancellationToken, BatchUpdateItem>>();
+        private SemaphoreSlim _signal = new SemaphoreSlim(0);
+
+
         public BatchUpdateService(IGenericRepository<DetailsOfIp> stackIpRepo /*IStackIpService service*/)
         {
             _stackIpRepo = stackIpRepo;
-            //_service = service;
+
         }
 
-        //public void Enqueue(DetailsOfIpDTO update)
-        //{
-        //    _updatesQueue.Enqueue(update);
-        //}
-
-        //public bool TryDequeue(out DetailsOfIpDTO update)
-        //{
-        //    return _updatesQueue.TryDequeue(out update);
-        //}
-
-
-
-        //    
-        //    private readonly IGenericRepository<DetailsOfIp> _stackIpRepo;
-        //    private readonly IStackIpService _service;
-
-        //    public BatchUpdateService(IGenericRepository<DetailsOfIp> stackIpRepo, IStackIpService service)
-        //    {
-        //        _stackIpRepo = stackIpRepo;
-        //        _service = service;
-        //    }
-
-        //public void Enqueue(Guid batchId, DetailsOfIpDTO[] updates)
-        //{
-
-        //    _queue.Enqueue(new BatchUpdateItem(batchId, updates));
-
-        //    _statusMap[batchId] = BatchUpdateStatus.Queued;
-        //    //return;
-        //}
         public async Task Enqueue(Guid batchId, DetailsOfIpDTO[] updates)
         {
             // Break updates into batches of 10
@@ -63,20 +42,45 @@ namespace IpStackAPI.RepositoryServices
             {
                 var batchUpdateItem = new BatchUpdateItem(batchId, batch);
                 _buffer.Post(batchUpdateItem);
-               
             }
-            _statusMap[batchId] = BatchUpdateStatus.Queued;
+
+            _statusMap[batchId] = BatchUpdateStatus.Processing;
         }
 
         public async Task<BatchUpdateItem?> TryDequeue()
         {
-            if (_buffer.TryReceive(out var item))
+            if (_buffer.TryReceive(out var batchUpdateItem))
             {
-                return item;
+                try
+                {
+                    foreach (var itemDetails in batchUpdateItem.DetailsForUpdate)
+                    {
+                        var ipDetailsEntity = await _stackIpRepo.GetDetailsOfIp(itemDetails.Ip);
+
+                        ipDetailsEntity.Ip = ipDetailsEntity.Ip;
+                        ipDetailsEntity.Longitude = itemDetails.Longitude;
+                        ipDetailsEntity.Latitude = itemDetails.Latitude;
+                        ipDetailsEntity.Country = itemDetails.Country;
+                        ipDetailsEntity.City = itemDetails.City;
+
+                        await _stackIpRepo.UpdateDetail(ipDetailsEntity);
+                    }
+
+                    _statusMap[batchUpdateItem.BatchId] = BatchUpdateStatus.Completed;
+                }
+                catch (Exception ex)
+                {
+                    // Handle exceptions, log errors, etc.
+                }
+
+                return batchUpdateItem;
             }
 
             return null;
         }
+
+
+
 
         //    // Method to be called by a background service to process updates
         public async Task ProcessUpdates(DetailsOfIpDTO detailsOfIpDTO)
@@ -117,33 +121,42 @@ namespace IpStackAPI.RepositoryServices
             // Optionally update the batch status to Completed outside the loop
         }
 
-        //    public async Task<BatchUpdateStatus> GetUpdateStatus(Guid batchId)
-        //    {
-        //        return _statusMap.GetValueOrDefault(batchId, BatchUpdateStatus.Unknown);
-        //    }
-
-
-        //}
-
-        public class BatchUpdateItem
+        public async Task<BatchUpdateStatus> GetUpdateStatus(Guid batchId)
         {
-            public Guid BatchId { get; }
-            public DetailsOfIpDTO[] DetailsForUpdate { get; }
-
-            public BatchUpdateItem(Guid batchId, DetailsOfIpDTO[] updateDetails)
-            {
-                BatchId = batchId;
-                DetailsForUpdate = updateDetails;
-            }
+            return _statusMap.GetValueOrDefault(batchId, BatchUpdateStatus.Processing);
         }
 
-        public enum BatchUpdateStatus
+
+    }
+
+    public class BatchUpdateItem
+    {
+        public Guid BatchId { get; }
+        public DetailsOfIpDTO[] DetailsForUpdate { get; }
+
+        public BatchUpdateItem(Guid batchId, DetailsOfIpDTO[] updateDetails)
         {
-            Queued,
-            Processing,
-            Completed,
-            Failed,
-            Unknown
+            BatchId = batchId;
+            DetailsForUpdate = updateDetails;
         }
     }
+
+    public enum BatchUpdateStatus
+    {
+        [Display(Name = "Queued")]
+        Queued,
+
+        [Display(Name = "Processing")]
+        Processing,
+
+        [Display(Name = "Completed")]
+        Completed,
+
+        [Display(Name = "Failed")]
+        Failed,
+
+        [Display(Name = "Unknown")]
+        Unknown
+    }
 }
+

@@ -1,6 +1,7 @@
 ﻿using IpStackAPI.Context;
 using IpStackAPI.DTOS;
 using IpStackAPI.Entities;
+using IpStackAPI.FactoryPattern;
 using IpStackAPI.GenericRepository;
 using IpStackAPI.Interfaces;
 using IpStackAPI.RepositoryServices;
@@ -22,15 +23,18 @@ namespace IpStackAPI.Controllers
         private readonly IMemoryCache _cache;
         private readonly IIPInfoProvider _provider;
         private readonly IBatchUpdateService _batchUpdateService;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly IBatchUpdateServiceFactory _serviceProvider;
 
-
-        public DetailsOfIpController(IMemoryCache memoryCache, ApplicationDbContext context, IIPInfoProvider provider, IGenericRepository<DetailsOfIp> stackIpRepo, IBatchUpdateService batchUpdateService)
+        public DetailsOfIpController(IMemoryCache memoryCache, ApplicationDbContext context, IIPInfoProvider provider, IGenericRepository<DetailsOfIp> stackIpRepo, IBatchUpdateService batchUpdateService, IServiceScopeFactory serviceScopeFactory, IBatchUpdateServiceFactory serviceProvider)
         {
 
             _cache = memoryCache;
             _provider = provider;
             _stackIpRepo = stackIpRepo;
             _batchUpdateService = batchUpdateService;
+            _serviceScopeFactory = serviceScopeFactory;
+            _serviceProvider = serviceProvider;
         }
 
         [HttpGet]
@@ -91,18 +95,11 @@ namespace IpStackAPI.Controllers
         public async Task<IActionResult> UpdateApiDetails([FromBody] DetailsOfIpDTO[] detailsOfIpDTO)
         {
             var batchUpdateId = Guid.NewGuid();
+            await _batchUpdateService.Enqueue(batchUpdateId, detailsOfIpDTO);
 
-            //foreach (var detail in detailsOfIpDTO)
-            //{
-            //    _batchUpdateService.Enqueue(detail);
-            //}
-
-             await  _batchUpdateService.Enqueue(batchUpdateId,detailsOfIpDTO);
-            
 
             return Ok(batchUpdateId);
 
-    
             #region Testing Purposes
             // Return the unique identifier
 
@@ -136,12 +133,13 @@ namespace IpStackAPI.Controllers
 
         }
 
-        //[HttpGet]
-        //[Route("CheckStatus")]
-        //public async Task<ActionResult<BatchUpdateStatus>> GetUpdateStatus(Guid batchId)
-        //{
-        //    return await _batchUpdateService.GetUpdateStatus(batchId);
-        //}
+        [HttpGet]
+        [Route("CheckStatus")]
+        public async Task<ActionResult<BatchUpdateStatus>> GetUpdateStatus(Guid batchId)
+        {
+           
+            return await _batchUpdateService.GetUpdateStatus(batchId);
+        }
 
     }
 }
