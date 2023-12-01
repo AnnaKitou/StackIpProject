@@ -169,8 +169,7 @@ namespace IpStackAPI.Controllers
         {
 
             var jobId= guid.ToString();
-            var jobDataMap = new JobDataMap();
-            jobDataMap.Get(jobId);
+            var jobDataMap = _schedulerFactory.GetScheduler();
             //foreach (var j in jobs)
             //{
             //    Console.WriteLine("Progress of {0} is {1}",
