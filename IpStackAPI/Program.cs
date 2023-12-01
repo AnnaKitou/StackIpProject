@@ -8,6 +8,8 @@ using StackIpProject;
 using StackIpProject.Configuration;
 using StackIpProject.Interfaces;
 using System.Configuration;
+using Quartz;
+using IpStackAPI.Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +27,13 @@ builder.Configuration.GetSection("EndPointSetting").Bind(options));
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IStackIpService, StackIpService>();
+builder.Services.AddQuartz(q =>
+{
+    q.UseMicrosoftDependencyInjectionJobFactory();
 
+    // Configure jobs
+    q.AddJob<UpdateDetailsOfIpJob>(j => j.WithIdentity("updateDetailsOfIpJob").StoreDurably());
+});
 
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IIPInfoProvider, IPInfoProvider>();

@@ -4,10 +4,12 @@ using IpStackAPI.Entities;
 using IpStackAPI.FactoryPattern;
 using IpStackAPI.GenericRepository;
 using IpStackAPI.Interfaces;
+using IpStackAPI.Quartz;
 using IpStackAPI.RepositoryServices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using Quartz;
 using StackIpProject.Interfaces;
 using StackIpProject.Model;
 using System.Net;
@@ -25,8 +27,9 @@ namespace IpStackAPI.Controllers
         private readonly IBatchUpdateService _batchUpdateService;
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IBatchUpdateServiceFactory _serviceProvider;
+        private readonly ISchedulerFactory _schedulerFactory;
 
-        public DetailsOfIpController(IMemoryCache memoryCache, ApplicationDbContext context, IIPInfoProvider provider, IGenericRepository<DetailsOfIp> stackIpRepo, IBatchUpdateService batchUpdateService, IServiceScopeFactory serviceScopeFactory, IBatchUpdateServiceFactory serviceProvider)
+        public DetailsOfIpController(IMemoryCache memoryCache, ApplicationDbContext context, IIPInfoProvider provider, IGenericRepository<DetailsOfIp> stackIpRepo, IBatchUpdateService batchUpdateService, IServiceScopeFactory serviceScopeFactory, IBatchUpdateServiceFactory serviceProvider, ISchedulerFactory scheduler)
         {
 
             _cache = memoryCache;
@@ -35,6 +38,7 @@ namespace IpStackAPI.Controllers
             _batchUpdateService = batchUpdateService;
             _serviceScopeFactory = serviceScopeFactory;
             _serviceProvider = serviceProvider;
+            _schedulerFactory = scheduler;
         }
 
         [HttpGet]
@@ -94,11 +98,37 @@ namespace IpStackAPI.Controllers
         [ProducesResponseType(StatusCodes.Status202Accepted, Type = typeof(DetailsOfIpDTO))]
         public async Task<IActionResult> UpdateApiDetails([FromBody] DetailsOfIpDTO[] detailsOfIpDTO)
         {
-            var batchUpdateId = Guid.NewGuid();
-            await _batchUpdateService.Enqueue(batchUpdateId, detailsOfIpDTO);
+            var jobId = Guid.NewGuid().ToString();
+
+            // Schedule Quartz job
+            var scheduler = await _schedulerFactory.GetScheduler();
+            await scheduler.Start();
+
+            var jobDataMap = new JobDataMap();
+            jobDataMap.Put("DetailsOfIpDTO", detailsOfIpDTO);
+
+            var job = JobBuilder.Create<UpdateDetailsOfIpJob>()
+                .WithIdentity(jobId)
+                .UsingJobData(jobDataMap)
+                .Build();
+
+            var trigger = TriggerBuilder.Create()
+                .WithIdentity($"{jobId}_trigger")
+                .StartNow()
+                .Build();
+
+            await scheduler.ScheduleJob(job, trigger);
+
+            // Return the job ID
+            return Ok(jobId);
 
 
-            return Ok(batchUpdateId);
+
+            //var batchUpdateId = Guid.NewGuid();
+            //await _batchUpdateService.Enqueue(batchUpdateId, detailsOfIpDTO);
+
+
+            //return Ok(batchUpdateId);
 
             #region Testing Purposes
             // Return the unique identifier
