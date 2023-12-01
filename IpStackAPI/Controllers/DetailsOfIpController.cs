@@ -9,6 +9,7 @@ using IpStackAPI.RepositoryServices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using Newtonsoft.Json.Linq;
 using Quartz;
 using StackIpProject.Interfaces;
 using StackIpProject.Model;
@@ -28,7 +29,6 @@ namespace IpStackAPI.Controllers
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IBatchUpdateServiceFactory _serviceProvider;
         private readonly ISchedulerFactory _schedulerFactory;
-
         public DetailsOfIpController(IMemoryCache memoryCache, ApplicationDbContext context, IIPInfoProvider provider, IGenericRepository<DetailsOfIp> stackIpRepo, IBatchUpdateService batchUpdateService, IServiceScopeFactory serviceScopeFactory, IBatchUpdateServiceFactory serviceProvider, ISchedulerFactory scheduler)
         {
 
@@ -165,10 +165,20 @@ namespace IpStackAPI.Controllers
 
         [HttpGet]
         [Route("CheckStatus")]
-        public async Task<ActionResult<BatchUpdateStatus>> GetUpdateStatus(Guid batchId)
+        public async Task<ActionResult<BatchUpdateStatus>> GetUpdateStatus(Guid guid)
         {
-           
-            return await _batchUpdateService.GetUpdateStatus(batchId);
+
+            var jobId= guid.ToString();
+            var jobDataMap = new JobDataMap();
+            jobDataMap.Get(jobId);
+            //foreach (var j in jobs)
+            //{
+            //    Console.WriteLine("Progress of {0} is {1}",
+            //        j.JobDetail.Key,
+            //        j.JobDetail.JobDataMap["progress"]);
+            //}
+
+            return await _batchUpdateService.GetUpdateStatus(guid);
         }
 
     }

@@ -34,7 +34,6 @@ builder.Services.AddQuartz(q =>
     // Configure jobs
     q.AddJob<UpdateDetailsOfIpJob>(j => j.WithIdentity("updateDetailsOfIpJob").StoreDurably());
 });
-
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IIPInfoProvider, IPInfoProvider>();
 builder.Services.AddScoped<IBatchUpdateService, BatchUpdateService>();

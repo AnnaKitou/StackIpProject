@@ -1,17 +1,18 @@
 ﻿using IpStackAPI.DTOS;
 using IpStackAPI.Entities;
 using IpStackAPI.GenericRepository;
+using Newtonsoft.Json.Linq;
 using Quartz;
 
 namespace IpStackAPI.Quartz
 {
     public class UpdateDetailsOfIpJob : IJob
     {
-        private readonly IGenericRepository<DetailsOfIp> _detailsOfIpRepository; // Replace with your repository
-
+        private readonly IGenericRepository<DetailsOfIp> _detailsOfIpRepository;
         public UpdateDetailsOfIpJob(IGenericRepository<DetailsOfIp> detailsOfIpRepository)
         {
             _detailsOfIpRepository = detailsOfIpRepository;
+   
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -29,6 +30,13 @@ namespace IpStackAPI.Quartz
             foreach (var detail in detailsOfIpDTO)
             {
                 var detailOfIp = await _detailsOfIpRepository.GetDetailsOfIp(detail.Ip);
+
+                detailOfIp.Ip = detailOfIp.Ip;
+                detailOfIp.Longitude = detail.Longitude;
+                detailOfIp.Latitude = detail.Latitude;
+                detailOfIp.Country = detail.Country;
+                detailOfIp.City = detail.City;
+
                 await _detailsOfIpRepository.UpdateDetail(detailOfIp);
             }
 
@@ -36,6 +44,14 @@ namespace IpStackAPI.Quartz
 
             // Example: Logging the completion of the job
             // Log.Information($"Job {jobId} completed successfully.");
+        }
+
+        public async Task JobDetails(IJobExecutionContext context)
+        {
+            var jobId = context.JobDetail.Key.Name;
+
+            //var jobDataMap = JobDetail.JobDataMap;
+            //var detailsOfIpDTO = jobDataMap.Get("DetailsOfIpDTO") as DetailsOfIpDTO[];
         }
     }
 }
