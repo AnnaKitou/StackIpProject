@@ -29,6 +29,7 @@ namespace IpStackAPI.Controllers
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IBatchUpdateServiceFactory _serviceProvider;
         private readonly ISchedulerFactory _schedulerFactory;
+
         public DetailsOfIpController(IMemoryCache memoryCache, ApplicationDbContext context, IIPInfoProvider provider, IGenericRepository<DetailsOfIp> stackIpRepo, IBatchUpdateService batchUpdateService, IServiceScopeFactory serviceScopeFactory, IBatchUpdateServiceFactory serviceProvider, ISchedulerFactory scheduler)
         {
 
@@ -110,6 +111,8 @@ namespace IpStackAPI.Controllers
             var job = JobBuilder.Create<UpdateDetailsOfIpJob>()
                 .WithIdentity(jobId)
                 .UsingJobData(jobDataMap)
+                .StoreDurably(true)
+                .RequestRecovery(true)
                 .Build();
 
             var trigger = TriggerBuilder.Create()
@@ -168,8 +171,32 @@ namespace IpStackAPI.Controllers
         public async Task<ActionResult<BatchUpdateStatus>> GetUpdateStatus(Guid guid)
         {
 
-            var jobId= guid.ToString();
-            var jobDataMap = _schedulerFactory.GetScheduler();
+           
+
+            // Schedule Quartz job
+            var scheduler = await _schedulerFactory.GetScheduler();
+            JobKey jobKey = new JobKey(guid.ToString());
+
+            IJobDetail jobDetail = await scheduler.GetJobDetail(jobKey);
+         var a=   jobDetail.JobDataMap.Values.ToList();
+
+            _batchUpdateService.TryDequeue(a);
+            //await scheduler.Start();
+
+            //var jobDataMap = new JobDataMap();
+            //jobDataMap.Put("JobUpdateStatus", guid);
+
+            //var job = JobBuilder.Create<JobUpdateStatus>()
+            //    .WithIdentity(guid.ToString())
+            //    .UsingJobData(jobDataMap)
+            //    .Build();
+
+            //var trigger = TriggerBuilder.Create()
+            //    .WithIdentity($"{guid}_trigger")
+            //    .StartNow()
+            //    .Build();
+
+            //await scheduler.ScheduleJob(job, trigger);
             //foreach (var j in jobs)
             //{
             //    Console.WriteLine("Progress of {0} is {1}",

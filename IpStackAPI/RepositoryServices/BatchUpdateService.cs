@@ -47,9 +47,9 @@ namespace IpStackAPI.RepositoryServices
             _statusMap[batchId] = BatchUpdateStatus.Processing;
         }
 
-        public async Task<BatchUpdateItem?> TryDequeue()
+        public async Task<BatchUpdateItem?> TryDequeue(BatchUpdateItem batchUpdateItem)
         {
-            if (_buffer.TryReceive(out var batchUpdateItem))
+            if (_buffer.TryReceive(out  batchUpdateItem))
             {
                 try
                 {
