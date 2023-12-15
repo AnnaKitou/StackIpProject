@@ -26,7 +26,7 @@ namespace IpStackAPI.Quartz
             var jobDataMap = context.JobDetail.JobDataMap;
             var detailsOfIpDTO = jobDataMap.Get("DetailsOfIpDTO") as DetailsOfIpDTO[];
 
-            await _batchUpdateService.Enqueue(new Guid(jobId), detailsOfIpDTO);
+         //   await _batchUpdateService.Enqueue(new Guid(jobId), detailsOfIpDTO);
       
             // Your logic to update DetailsOfIp
             // This is where you would call for each item

@@ -10,7 +10,7 @@ namespace IpStackAPI.Interfaces
     {
 
         Task Enqueue(Guid batchId, DetailsOfIpDTO[] updates);
-        Task<BatchUpdateItem> TryDequeue(BatchUpdateItem batchUpdateItem);
+        Task<BatchUpdateItem> TryDequeue();
         public Task<BatchUpdateStatus> GetUpdateStatus(Guid batchId);
         public Task ProcessUpdates(DetailsOfIpDTO detailsOfIpDTO);
       

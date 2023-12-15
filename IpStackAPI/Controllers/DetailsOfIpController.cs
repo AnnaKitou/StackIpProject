@@ -170,17 +170,20 @@ namespace IpStackAPI.Controllers
         [Route("CheckStatus")]
         public async Task<ActionResult<BatchUpdateStatus>> GetUpdateStatus(Guid guid)
         {
-
-           
-
             // Schedule Quartz job
             var scheduler = await _schedulerFactory.GetScheduler();
             JobKey jobKey = new JobKey(guid.ToString());
 
             IJobDetail jobDetail = await scheduler.GetJobDetail(jobKey);
-         var a=   jobDetail.JobDataMap.Values.ToList();
+            var a=   jobDetail.JobDataMap.Get("DetailsOfIpDTO") as DetailsOfIpDTO[];
+            //var detailsOfIpDTO = JobDataMap.Get("DetailsOfIpDTO") as DetailsOfIpDTO[];
+            // Schedule Quartz job
 
-            _batchUpdateService.TryDequeue(a);
+            await _batchUpdateService.Enqueue(guid, a);
+
+
+
+            _batchUpdateService.TryDequeue();
             //await scheduler.Start();
 
             //var jobDataMap = new JobDataMap();
